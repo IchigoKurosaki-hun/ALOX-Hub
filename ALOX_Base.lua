@@ -1,4 +1,4 @@
---// ALOX Hub with User Avatar in Sidebar + Classic Grey Theme + Icons + Exit Button + Toggle + All Currency Detection
+--// ALOX Hub - Base UI (with Player Info + Logs)
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -6,17 +6,18 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
+-- ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ALOX_Hub"
 ScreenGui.Parent = PlayerGui
 ScreenGui.ResetOnSpawn = false
 
+-- Main Frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 600, 0, 400)
 MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-MainFrame.BackgroundTransparency = 0.15
 MainFrame.Parent = ScreenGui
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 20)
 
@@ -50,7 +51,6 @@ end)
 local Sidebar = Instance.new("Frame")
 Sidebar.Size = UDim2.new(0, 160, 1, 0)
 Sidebar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Sidebar.BackgroundTransparency = 0.15
 Sidebar.Parent = MainFrame
 Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 20)
 
@@ -59,9 +59,6 @@ local ContentFrame = Instance.new("Frame")
 ContentFrame.Size = UDim2.new(1, -170, 1, 0)
 ContentFrame.Position = UDim2.new(0, 170, 0, 0)
 ContentFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ContentFrame.BackgroundTransparency = 0.15
-ContentFrame.BorderSizePixel = 2
-ContentFrame.BorderColor3 = Color3.fromRGB(70, 70, 70)
 ContentFrame.Parent = MainFrame
 Instance.new("UICorner", ContentFrame).CornerRadius = UDim.new(0, 20)
 Instance.new("UIPadding", ContentFrame).PaddingTop = UDim.new(0, 10)
@@ -87,31 +84,26 @@ ExitButton.TextSize = 18
 ExitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ExitButton.Parent = MainFrame
 Instance.new("UICorner", ExitButton).CornerRadius = UDim.new(0, 6)
-
-ExitButton.MouseEnter:Connect(function()
-	TweenService:Create(ExitButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200, 50, 50)}):Play()
-end)
-ExitButton.MouseLeave:Connect(function()
-	TweenService:Create(ExitButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 50)}):Play()
-end)
 ExitButton.MouseButton1Click:Connect(function()
 	MainFrame.Visible = false
 end)
 
 -- Tabs
-_G.ALOX_Tabs = {}
-_G.ALOX_TabContents = {}
+local Tabs = {
+	{"Main", 6031071050},
+	{"Farm", 6031075931},
+	{"Raid", 5858633973},
+	{"Misc", 12120687783},
+	{"Settings", 6031075938}
+}
+local TabButtons, TabContents = {}, {}
 
-function _G.ALOX_CreateTab(name, iconId)
-	local order = #_G.ALOX_Tabs
+local function createTabButton(name, iconId, order)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0, 138, 0, 34)
 	btn.Position = UDim2.new(0, 10, 0, 70 + (order * 38))
 	btn.Text = ""
 	btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	btn.Font = Enum.Font.GothamSemibold
-	btn.TextSize = 14
 	btn.Parent = Sidebar
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 20)
 
@@ -133,54 +125,100 @@ function _G.ALOX_CreateTab(name, iconId)
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.Parent = btn
 
+	btn.MouseButton1Click:Connect(function()
+		for tabName, content in pairs(TabContents) do
+			content.Visible = (tabName == name)
+			TabButtons[tabName].BackgroundColor3 = (tabName == name) and Color3.fromRGB(70, 70, 70) or Color3.fromRGB(50, 50, 50)
+		end
+	end)
+
+	TabButtons[name] = btn
+end
+
+local function createContentFrame(name)
 	local frame = Instance.new("Frame")
-	frame.Name = name .. "_Content"
 	frame.Size = UDim2.new(1, -20, 1, -20)
 	frame.Position = UDim2.new(0, 10, 0, 10)
 	frame.BackgroundTransparency = 1
 	frame.Visible = false
 	frame.Parent = ContentFrame
-
-	btn.MouseButton1Click:Connect(function()
-		for tabName, f in pairs(_G.ALOX_TabContents) do
-			f.Visible = (tabName == name)
-		end
-		for tabName, b in pairs(_G.ALOX_Tabs) do
-			b.BackgroundColor3 = (tabName == name) and Color3.fromRGB(70, 70, 70) or Color3.fromRGB(50, 50, 50)
-		end
-	end)
-
-	_G.ALOX_Tabs[name] = btn
-	_G.ALOX_TabContents[name] = frame
-
-	return frame
+	TabContents[name] = frame
 end
 
--- Default Main tab
-local mainTab = _G.ALOX_CreateTab("Main", 6031071050)
+for i, data in ipairs(Tabs) do
+	createTabButton(data[1], data[2], i)
+	createContentFrame(data[1])
+end
 
--- Example info in Main tab
-local infoLabel = Instance.new("TextLabel")
-infoLabel.Size = UDim2.new(1, -10, 0, 30)
-infoLabel.Text = "ALOX Hub Loaded"
-infoLabel.TextColor3 = Color3.fromRGB(255,255,255)
-infoLabel.BackgroundTransparency = 1
-infoLabel.Parent = mainTab
+TabContents["Main"].Visible = true
+TabButtons["Main"].BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 
--- Avatar in Sidebar
-local avatarImage = Instance.new("ImageLabel")
-avatarImage.Size = UDim2.new(0, 119, 0, 76)
-avatarImage.Position = UDim2.new(0, 20, 1, -100)
-avatarImage.BackgroundTransparency = 1
-avatarImage.Parent = Sidebar
-Instance.new("UICorner", avatarImage).CornerRadius = UDim.new(1, 0)
-local avatarOutline = Instance.new("UIStroke", avatarImage)
-avatarOutline.Thickness = 2
-avatarOutline.Color = Color3.fromRGB(255, 255, 255)
-local content, _ = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
-avatarImage.Image = content
+-- Main Tab Info + Logs
+local frame = TabContents["Main"]
 
--- Right Shift Toggle
+local function createInfoLine(yPos, labelText)
+	local textLabel = Instance.new("TextLabel")
+	textLabel.Size = UDim2.new(0, 300, 0, 20)
+	textLabel.Position = UDim2.new(0, 0, 0, yPos)
+	textLabel.BackgroundTransparency = 1
+	textLabel.Text = labelText
+	textLabel.Font = Enum.Font.Gotham
+	textLabel.TextSize = 14
+	textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	textLabel.TextXAlignment = Enum.TextXAlignment.Left
+	textLabel.Parent = frame
+	return textLabel
+end
+
+local nameLabel = createInfoLine(0, "Name: " .. LocalPlayer.Name)
+local idLabel = createInfoLine(20, "UserId: " .. LocalPlayer.UserId)
+local placeLabel = createInfoLine(40, "PlaceId: " .. game.PlaceId)
+local moneyLabel = createInfoLine(60, "Money: Loading...")
+
+task.spawn(function()
+	while true do
+		nameLabel.Text = "Name: " .. LocalPlayer.Name
+		idLabel.Text = "UserId: " .. LocalPlayer.UserId
+		placeLabel.Text = "PlaceId: " .. game.PlaceId
+
+		local currencies = {}
+		if LocalPlayer:FindFirstChild("leaderstats") then
+			for _, stat in pairs(LocalPlayer.leaderstats:GetChildren()) do
+				table.insert(currencies, stat.Name .. ": " .. stat.Value)
+			end
+		end
+		moneyLabel.Text = (#currencies > 0) and ("Money: " .. table.concat(currencies, " | ")) or "Money: N/A"
+
+		task.wait(1)
+	end
+end)
+
+-- Logs box
+local logBox = Instance.new("ScrollingFrame")
+logBox.Size = UDim2.new(0, 400, 0, 200)
+logBox.Position = UDim2.new(0, 0, 0, 90)
+logBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+logBox.ScrollBarThickness = 6
+logBox.Parent = frame
+Instance.new("UICorner", logBox).CornerRadius = UDim.new(0, 8)
+local logList = Instance.new("UIListLayout", logBox)
+logList.Padding = UDim.new(0, 2)
+
+function _G.addLog(msg)
+	local lbl = Instance.new("TextLabel")
+	lbl.Size = UDim2.new(1, -10, 0, 20)
+	lbl.BackgroundTransparency = 1
+	lbl.Text = msg
+	lbl.Font = Enum.Font.Gotham
+	lbl.TextSize = 14
+	lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.Parent = logBox
+end
+
+_G.addLog("Hub loaded successfully.")
+
+-- Toggle with RightShift
 UIS.InputBegan:Connect(function(input, gameProcessed)
 	if not gameProcessed and input.KeyCode == Enum.KeyCode.RightShift then
 		MainFrame.Visible = not MainFrame.Visible
